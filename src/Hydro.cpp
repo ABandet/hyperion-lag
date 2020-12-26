@@ -33,9 +33,17 @@ void add_cell_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                     const std::string& field_name)
 {
   // Create a VTK double array, insert values and attach it to the mesh
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  auto double_arr = vtkSmartPointer<vtkDoubleArray>::New();
+  double_arr->Allocate(field.size());
+  double_arr->SetName(field_name.c_str());
+  double_arr->SetNumberOfComponents(1);
+
+  for (auto f : field) {
+    double_arr->InsertNextValue(f);
+  }
+
+  auto fieldData = mesh->GetCellData();
+  fieldData->AddArray(double_arr);
 }
 
 //----------------------------------------------------------------------------
@@ -46,9 +54,17 @@ void add_node_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                     const std::string& field_name)
 {
   // Create a VTK double array, insert values and attach it to the mesh
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  auto double_arr = vtkSmartPointer<vtkDoubleArray>::New();
+  double_arr->Allocate(field.size());
+  double_arr->SetName(field_name.c_str());
+  double_arr->SetNumberOfComponents(1);
+
+  for (auto f : field) {
+    double_arr->InsertNextValue(f);
+  }
+
+  auto fieldData = mesh->GetPointData();
+  fieldData->AddArray(double_arr);
 }
 
 //----------------------------------------------------------------------------
@@ -59,9 +75,17 @@ void add_vector_node_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
                            const std::string& field_name)
 {
   // Create a VTK double array, insert values and attach it to the mesh
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  auto double_arr = vtkSmartPointer<vtkDoubleArray>::New();
+  double_arr->Allocate(field.size()*2);
+  double_arr->SetName(field_name.c_str());
+  double_arr->SetNumberOfComponents(2);
+
+  for (auto f : field) {
+    double_arr->InsertNextTuple2(f.first, f.second);
+  }
+
+  auto fieldData = mesh->GetCellData();
+  fieldData->AddArray(double_arr);
 }
 
 /*---------------------------------------------------------------------------*/
