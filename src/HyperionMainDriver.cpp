@@ -29,15 +29,13 @@
 /*---------------------------------------------------------------------------*/
 
 HyperionMainDriver::HyperionMainDriver(const YAML::Node dataset)
-  : m_dataset(dataset)
-{
+        : m_dataset(dataset) {
 }
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-void HyperionMainDriver::load_mesh()
-{
+void HyperionMainDriver::load_mesh() {
   std::cout << "[Driver::load_mesh] Initialize GMSH API\n";
   gmsh::initialize();
   gmsh::option::setNumber("General.Terminal", 1);
@@ -52,18 +50,18 @@ void HyperionMainDriver::load_mesh()
   std::vector<std::pair<int, int>> ic_envs;
   gmsh::model::getPhysicalGroups(ic_envs, IC_ENV_DIM);
 
-  for (const auto& env : ic_envs) {
+  for (const auto &env : ic_envs) {
     int env_idx = env.second;
     std::string env_name;
     gmsh::model::getPhysicalName(2, env_idx, env_name);
 
     std::vector<int> entities;
     gmsh::model::getEntitiesForPhysicalGroup(IC_ENV_DIM, env_idx, entities);
-    for (const auto& e : entities) {
+    for (const auto &e : entities) {
       std::vector<std::size_t> cells;
       std::vector<std::size_t> nodes;
       gmsh::model::mesh::getElementsByType(MSH_QUAD_4, cells, nodes, e);
-      for (const auto& c : cells) {
+      for (const auto &c : cells) {
         m_cell_envs[c] = env_name;
       }
     }
@@ -73,7 +71,7 @@ void HyperionMainDriver::load_mesh()
   std::vector<std::pair<int, int>> bc_envs;
   gmsh::model::getPhysicalGroups(bc_envs, BC_ENV_DIM);
 
-  for (const auto& env : bc_envs) {
+  for (const auto &env : bc_envs) {
     int env_idx = env.second;
     std::string env_name;
     gmsh::model::getPhysicalName(BC_ENV_DIM, env_idx, env_name);
@@ -81,7 +79,7 @@ void HyperionMainDriver::load_mesh()
     std::vector<std::size_t> nodes;
     std::vector<double> coords;
     gmsh::model::mesh::getNodesForPhysicalGroup(BC_ENV_DIM, env_idx, nodes, coords);
-    for (const auto& n : nodes) {
+    for (const auto &n : nodes) {
       m_node_envs[n].push_back(env_name);
     }
   }
@@ -97,19 +95,18 @@ void HyperionMainDriver::load_mesh()
   std::cout << "[Driver::load_mesh] Initializing a VTK unstructured grid\n";
 
   // Create VTK points
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  auto points = vtkSmartPointer<vtkPoints>::New();
 
   // Insert points from Gmsh node coordinates
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  size_t node;
+  for (size_t i = 0; i < nodes.size(); ++i) {
+    node = nodes[i];
+    points->InsertPoint(node - 1, coords[i * 3 + 0], coords[i * 3 + 1], coords[i * 3 + 2]);
+  }
 
   // Create a VTK unstructured grid
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  m_mesh = vtkSmartPointer<vtkUnstructuredGrid>::New();
+  m_mesh->SetPoints(points);
 
   int nb_cells_to_allocate = 0;
   {
@@ -120,9 +117,7 @@ void HyperionMainDriver::load_mesh()
   }
 
   // Allocate cells
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  m_mesh->Allocate(nb_cells_to_allocate);
 
   // Get global cells and nodes
   nodes.clear();
@@ -134,9 +129,7 @@ void HyperionMainDriver::load_mesh()
     m_vtk_msh_cells[c] = cells[c];
 
     // Insert connectivites, i.e. nodes connected to a cell
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // Write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    m_mesh->InsertNextCell(VTK_QUAD, 4, reinterpret_cast<const vtkIdType *>(&nodes[c * 4]));
   }
 
   gmsh::finalize();
@@ -147,8 +140,7 @@ void HyperionMainDriver::load_mesh()
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-int HyperionMainDriver::run()
-{
+int HyperionMainDriver::run() {
   auto vars = new HydroVars(m_mesh->GetNumberOfCells(),
                             m_mesh->GetNumberOfPoints());
   vars->setup_sod(m_dataset, m_cell_envs, m_vtk_msh_cells);
