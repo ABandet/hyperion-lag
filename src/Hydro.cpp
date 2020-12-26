@@ -115,9 +115,10 @@ void Hydro::init()
     double coord[3];
 
     // Get node n coordinates and save them to m_vars->m_node_coord
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    m_mesh->GetPoint(n, coord);
+    std::pair<double, double> coordPair;
+    coordPair =  {coord[0], coord[1]};
+    m_vars->m_node_coord.push_back(coordPair);
   }
 
   // Initialize cell volume
@@ -129,9 +130,9 @@ void Hydro::init()
     double node_mass_contrib = 0.25 * m_vars->m_cell_mass[c];
 
     // Get cell c to retrieve its node ids
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    auto points = vtkSmartPointer<vtkIdList>::New();
+    m_mesh->GetCellPoints(c, points);
+
     int nb_nodes_for_cell = 1; // Change this line to get the correct number of nodes
     for (int n = 0; n < nb_nodes_for_cell; ++n) {
       auto node = n; // Change this line to get the global node id
@@ -163,9 +164,9 @@ void Hydro::compute_volume()
     // Cache local coordinates;
 
     // Get cell c to retrieve its nodes
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    auto points = vtkSmartPointer<vtkIdList>::New();
+    m_mesh->GetCellPoints(c, points);
+
     int nb_nodes_of_cell = 1; // Change this line to get the correct number of nodes
     for (int n = 0; n < nb_nodes_of_cell; ++n) {
       double p[3];
@@ -222,9 +223,9 @@ void Hydro::compute_pressure_force()
 
   for (int c = 0; c < m_vars->m_nb_cells; ++c) {
     // Get cell c to retrieve its node ids
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    auto points = vtkSmartPointer<vtkIdList>::New();
+    m_mesh->GetCellPoints(c, points);
+
     int nb_nodes_for_cell = 1; // Change this line to get the correct number of nodes
     for (int n = 0; n < nb_nodes_for_cell; ++n) {
       auto node = n; // Change this line to get the global node id
@@ -310,13 +311,17 @@ void Hydro::apply_boundary_condition(const std::map<int, std::vector<std::string
 
 void Hydro::move_nodes()
 {
+  auto mesh = m_mesh->GetPoints();
+
   for (int n = 0; n < m_vars->m_nb_nodes; ++n) {
     m_vars->m_node_coord[n].first += m_dt * m_vars->m_velocity[n].first;
     m_vars->m_node_coord[n].second += m_dt * m_vars->m_velocity[n].second;
     // Update m_mesh node positions
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    // TODO : write code here
-    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+    double points[2];
+    points[0] = m_vars->m_node_coord[n].first;
+    points[1] = m_vars->m_node_coord[n].second;
+    mesh->SetPoint(n, points);
   }
 }
 
