@@ -1,7 +1,7 @@
 # HyPERION-lag
 
 ```
-Made by Alexis BANDET
+Student : Alexis BANDET
 ```
 
 This is **HyPERION**, as in *Hydrodynamics Platform for Exascale Research, In situ analysis and OptimizatioN* - Lagrangian variant
