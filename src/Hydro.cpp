@@ -94,7 +94,7 @@ void add_vector_node_field(vtkSmartPointer<vtkUnstructuredGrid> mesh,
 Hydro::Hydro(YAML::Node dataset,
              vtkSmartPointer<vtkUnstructuredGrid> mesh,
              HydroVars *vars)
-  : m_dataset(dataset), m_mesh(mesh), m_vars(vars)
+        : m_dataset(dataset), m_mesh(mesh), m_vars(vars)
 {
 }
 
@@ -171,9 +171,8 @@ void Hydro::compute_volume()
     for (int n = 0; n < nb_nodes_of_cell; ++n) {
       double p[3];
       // Get node n coordinates
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-      // TODO : write code here
-      // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      m_mesh->GetPoint(points->GetId(n), p);
+
       coord[n] = std::make_pair(p[0], p[1]);
     }
 
@@ -204,8 +203,8 @@ void Hydro::compute_cqs(std::pair<double, double>* coord,
     int next_node_i = (n + 1 + nb_nodes_of_cell) % nb_nodes_of_cell;
 
     auto length = std::make_pair(
-      0.5 * (coord[prev_node_i].first - coord[next_node_i].first),
-      0.5 * (coord[prev_node_i].second - coord[next_node_i].second));
+            0.5 * (coord[prev_node_i].first - coord[next_node_i].first),
+            0.5 * (coord[prev_node_i].second - coord[next_node_i].second));
     cell_cqs.push_back(std::make_pair(-length.second, length.first));
   }
   m_vars->m_cqs[cell_idx] = cell_cqs;
@@ -254,8 +253,8 @@ void Hydro::compute_artificial_viscosity()
     double div_u = derived_massic_volume / massic_volume_staggered;
     if (div_u < 0.) {
       m_vars->m_artificial_viscosity[c] = 1. / massic_volume_staggered *
-        (quadratic_viscosity_coef * std::pow(m_vars->m_cell_volume[c], 2.0) * std::pow(div_u, 2.0) +
-        linear_viscosity_coef * m_vars->m_cell_volume[c] * m_vars->m_sound_speed[c] * std::abs(div_u));
+                                          (quadratic_viscosity_coef * std::pow(m_vars->m_cell_volume[c], 2.0) * std::pow(div_u, 2.0) +
+                                           linear_viscosity_coef * m_vars->m_cell_volume[c] * m_vars->m_sound_speed[c] * std::abs(div_u));
     }
   }
 }
@@ -268,9 +267,9 @@ void Hydro::compute_velocity()
   for (int n = 0; n < m_vars->m_nb_nodes; ++n) {
     auto old_velocity = m_vars->m_velocity[n];
     m_vars->m_velocity[n].first = old_velocity.first +
-      (m_dt_staggered / m_vars->m_node_mass[n]) * m_vars->m_force[n].first;
+                                  (m_dt_staggered / m_vars->m_node_mass[n]) * m_vars->m_force[n].first;
     m_vars->m_velocity[n].second = old_velocity.second +
-      (m_dt_staggered / m_vars->m_node_mass[n]) * m_vars->m_force[n].second;
+                                   (m_dt_staggered / m_vars->m_node_mass[n]) * m_vars->m_force[n].second;
   }
 }
 
@@ -379,12 +378,14 @@ void Hydro::compute_dt()
 void Hydro::dump(int step, double simulation_time)
 {
   std::cout << "[Hydro::dump] Iteration " << step << " -- Time : "
-    << simulation_time << " s -- Time step : " << m_dt << " s\n";
+            << simulation_time << " s -- Time step : " << m_dt << " s\n";
 
   // Attach the simulation time to the mesh
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  auto time_arr = vtkSmartPointer<vtkDoubleArray>::New();
+  time_arr->SetNumberOfComponents(1);
+  time_arr->SetName("Time");
+  time_arr->InsertNextValue(simulation_time);
+  m_mesh->GetFieldData()->AddArray(time_arr);
 
   add_cell_field(m_mesh, m_vars->m_pressure, "Pressure");
   add_cell_field(m_mesh, m_vars->m_artificial_viscosity, "ArtificialViscosity");
@@ -400,9 +401,9 @@ void Hydro::dump(int step, double simulation_time)
   std::string file_name = "HydroLag." + std::to_string(step) + ".vtu";
 
   // Write the solutions to file_name
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  // TODO : write code here
-  // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  m_writer->SetFileName(file_name.c_str());
+  m_writer->SetInputData(m_mesh);
+  m_writer->Write();
 }
 
 /*---------------------------------------------------------------------------*/
