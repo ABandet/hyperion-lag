@@ -317,7 +317,7 @@ void Hydro::move_nodes()
     m_vars->m_node_coord[n].second += m_dt * m_vars->m_velocity[n].second;
     // Update m_mesh node positions
 
-    double points[2];
+    double points[3];
     points[0] = m_vars->m_node_coord[n].first;
     points[1] = m_vars->m_node_coord[n].second;
     mesh->SetPoint(n, points);
