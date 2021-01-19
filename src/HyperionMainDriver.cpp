@@ -29,13 +29,15 @@
 /*---------------------------------------------------------------------------*/
 
 HyperionMainDriver::HyperionMainDriver(const YAML::Node dataset)
-        : m_dataset(dataset) {
+  : m_dataset(dataset)
+{
 }
 
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-void HyperionMainDriver::load_mesh() {
+void HyperionMainDriver::load_mesh()
+{
   std::cout << "[Driver::load_mesh] Initialize GMSH API\n";
   gmsh::initialize();
   gmsh::option::setNumber("General.Terminal", 1);
@@ -50,18 +52,18 @@ void HyperionMainDriver::load_mesh() {
   std::vector<std::pair<int, int>> ic_envs;
   gmsh::model::getPhysicalGroups(ic_envs, IC_ENV_DIM);
 
-  for (const auto &env : ic_envs) {
+  for (const auto& env : ic_envs) {
     int env_idx = env.second;
     std::string env_name;
     gmsh::model::getPhysicalName(2, env_idx, env_name);
 
     std::vector<int> entities;
     gmsh::model::getEntitiesForPhysicalGroup(IC_ENV_DIM, env_idx, entities);
-    for (const auto &e : entities) {
+    for (const auto& e : entities) {
       std::vector<std::size_t> cells;
       std::vector<std::size_t> nodes;
       gmsh::model::mesh::getElementsByType(MSH_QUAD_4, cells, nodes, e);
-      for (const auto &c : cells) {
+      for (const auto& c : cells) {
         m_cell_envs[c] = env_name;
       }
     }
@@ -71,7 +73,7 @@ void HyperionMainDriver::load_mesh() {
   std::vector<std::pair<int, int>> bc_envs;
   gmsh::model::getPhysicalGroups(bc_envs, BC_ENV_DIM);
 
-  for (const auto &env : bc_envs) {
+  for (const auto& env : bc_envs) {
     int env_idx = env.second;
     std::string env_name;
     gmsh::model::getPhysicalName(BC_ENV_DIM, env_idx, env_name);
@@ -79,7 +81,7 @@ void HyperionMainDriver::load_mesh() {
     std::vector<std::size_t> nodes;
     std::vector<double> coords;
     gmsh::model::mesh::getNodesForPhysicalGroup(BC_ENV_DIM, env_idx, nodes, coords);
-    for (const auto &n : nodes) {
+    for (const auto& n : nodes) {
       m_node_envs[n].push_back(env_name);
     }
   }
@@ -95,13 +97,12 @@ void HyperionMainDriver::load_mesh() {
   std::cout << "[Driver::load_mesh] Initializing a VTK unstructured grid\n";
 
   // Create VTK points
-  auto points = vtkSmartPointer<vtkPoints>::New();
+  vtkNew<vtkPoints> points;
+  points->SetDataTypeToDouble();
 
   // Insert points from Gmsh node coordinates
-  size_t node;
-  for (size_t i = 0; i < nodes.size(); ++i) {
-    node = nodes[i];
-    points->InsertPoint(node - 1, coords[i * 3 + 0], coords[i * 3 + 1], coords[i * 3 + 2]);
+  for (std::size_t n = 0; n < nodes.size(); ++n) {
+    points->InsertPoint(nodes[n] - 1, coords[n * 3], coords[n * 3 + 1], coords[n * 3 + 2]);
   }
 
   // Create a VTK unstructured grid
@@ -128,8 +129,11 @@ void HyperionMainDriver::load_mesh() {
     m_msh_vtk_cells[cells[c]] = c;
     m_vtk_msh_cells[c] = cells[c];
 
-    // Insert connectivites, i.e. nodes connected to a cell
-    m_mesh->InsertNextCell(VTK_QUAD, 4, reinterpret_cast<const vtkIdType *>(&nodes[c * 4]));
+    vtkNew<vtkIdList> cell_nodes;
+    for (int n = 0; n < 4; ++n) {
+      cell_nodes->InsertNextId(nodes[c * 4 + n] - 1);
+    }
+    m_mesh->InsertNextCell(VTK_QUAD, cell_nodes);
   }
 
   gmsh::finalize();
@@ -140,7 +144,8 @@ void HyperionMainDriver::load_mesh() {
 /*---------------------------------------------------------------------------*/
 /*---------------------------------------------------------------------------*/
 
-int HyperionMainDriver::run() {
+int HyperionMainDriver::run()
+{
   auto vars = new HydroVars(m_mesh->GetNumberOfCells(),
                             m_mesh->GetNumberOfPoints());
   vars->setup_sod(m_dataset, m_cell_envs, m_vtk_msh_cells);
@@ -161,9 +166,8 @@ int HyperionMainDriver::run() {
   while (simulation_time <= final_time + hydro->dt()) {
     auto loop_start_time = std::chrono::high_resolution_clock::now();
 
-    if (step % 500 == 0) {
-      hydro->dump(step, simulation_time);
-    }
+    bool last_iteration = (simulation_time == final_time + hydro->dt());
+    // TODO: if ANALYZE_INSITU, then call the appropriate method, else call dump
 
     hydro->compute_pressure_force();
     hydro->compute_artificial_viscosity();
@@ -181,6 +185,8 @@ int HyperionMainDriver::run() {
     auto loop_end_time = std::chrono::high_resolution_clock::now();
     computation_time += loop_end_time - loop_start_time;
   }
+
+  hydro->finalize();
 
   std::cout << "[Driver::run] Computation time : "
             << std::chrono::duration_cast<std::chrono::seconds>(computation_time).count()

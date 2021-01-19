@@ -1,7 +1,9 @@
 # HyPERION-lag
 
 ```
-Student : Alexis BANDET
+Students : 
+- Alexis BANDET
+- Valentin GAISSET
 ```
 
 This is **HyPERION**, as in *Hydrodynamics Platform for Exascale Research, In situ analysis and OptimizatioN* - Lagrangian variant
