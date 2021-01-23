@@ -2,8 +2,8 @@
 
 ```
 Students : 
-- Alexis BANDET
-- Valentin GAISSET
+- BANDET Alexis
+- GAISSET Valentin
 ```
 
 This is **HyPERION**, as in *Hydrodynamics Platform for Exascale Research, In situ analysis and OptimizatioN* - Lagrangian variant
